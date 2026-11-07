@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transición de Mallas</title>
+<style>
+  :root {
+    --fondo: #f5f6f8; --panel: #ffffff; --texto: #1d2330; --suave: #5f6b7d;
+    --borde: #dde1e7; --primario: #1f5fbf; --ok: #1e7f4f; --aviso: #a86500; --error: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); }
+  header { background: var(--panel); border-bottom: 1px solid var(--borde); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; margin: 0; }
+  main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+  .oculto { display: none !important; }
+  label { display: block; font-size: 13px; color: var(--suave); margin: 10px 0 4px; }
+  input, textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--borde); border-radius: 6px; font: inherit; }
+  button { background: var(--primario); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font: inherit; cursor: pointer; }
+  button.sec { background: transparent; color: var(--primario); border: 1px solid var(--borde); }
+  .fila { display: flex; gap: 8px; align-items: center; }
+  .fila input { flex: 1; }
+  .error { color: var(--error); font-size: 14px; margin-top: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  th { color: var(--suave); font-weight: 600; font-size: 12px; text-transform: uppercase; }
+  tr.click { cursor: pointer; } tr.click:hover { background: #f0f4fb; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tabs button { background: transparent; color: var(--suave); border: 1px solid var(--borde); }
+  .tabs button.activa { background: var(--primario); color: #fff; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 12px 0; }
+  .kpi { border: 1px solid var(--borde); border-radius: 8px; padding: 12px; }
+  .kpi b { display: block; font-size: 22px; } .kpi span { color: var(--suave); font-size: 12px; }
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .directa, .equivalencia { background: #e3f3ea; color: var(--ok); }
+  .reemplazo_electiva { background: #fff1db; color: var(--aviso); }
+  .requiere_revision, .abierto { background: #fbe4e2; color: var(--error); }
+  .cerrado { background: #eceff3; color: var(--suave); }
+  h2 { font-size: 16px; margin: 0 0 8px; } h3 { font-size: 14px; margin: 20px 0 8px; }
+  .login { max-width: 360px; margin: 80px auto; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Transición de mallas curriculares</h1>
+  <div id="sesion" class="fila oculto"><span id="quien"></span><button class="sec" id="btnSalir">Salir</button></div>
+</header>
+
+<!-- ============ LOGIN ============ -->
+<section id="vistaLogin" class="panel login">
+  <h2>Iniciar sesión</h2>
+  <form id="formLogin">
+    <label for="usuario">Usuario</label>
+    <input id="usuario" autocomplete="username" required>
+    <label for="clave">Contraseña</label>
+    <input id="clave" type="password" autocomplete="current-password" required>
+    <div style="margin-top:16px"><button type="submit">Entrar</button></div>
+    <div id="errorLogin" class="error"></div>
+  </form>
+</section>
+
+<!-- ============ APP ============ -->
+<main id="vistaApp" class="oculto">
+  <div class="tabs">
+    <button data-tab="tabEstudiantes" class="activa">Estudiantes</button>
+    <button data-tab="tabTickets" id="btnTabTickets" class="oculto">Tickets</button>
+  </div>
+
+  <section id="tabEstudiantes">
+    <div class="panel">
+      <div class="fila">
+        <input id="buscar" placeholder="Buscar por código, nombre o documento">
+        <button id="btnBuscar">Buscar</button>
+      </div>
+      <table style="margin-top:12px">
+        <thead><tr><th>Código</th><th>Nombre</th><th>Documento</th><th>Malla</th><th>Estado</th></tr></thead>
+        <tbody id="tablaEstudiantes"></tbody>
+      </table>
+    </div>
+    <div id="detalle" class="panel oculto"></div>
+  </section>
+
+  <section id="tabTickets" class="oculto">
+    <div class="panel">
+      <h2>Tickets de revisión</h2>
+      <table>
+        <thead><tr><th>Fecha</th><th>Estudiante</th><th>Materia</th><th>Motivo</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="tablaTickets"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ---------------------------------------------------------------------
+ * Cliente mínimo de la API.
+ * El token se guarda en sessionStorage: se borra al cerrar la pestaña.
+ * ------------------------------------------------------------------- */
+const $ = (id) => document.getElementById(id);
+let token = sessionStorage.getItem("token");
+let usuario = null;
+
+// Escapa texto antes de insertarlo como HTML (evita inyección de código).
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function api(ruta, opciones = {}) {
+  const resp = await fetch(ruta, {
+    ...opciones,
+    headers: { ...(opciones.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (resp.status === 401 && ruta !== "/api/auth/login") { salir(); throw new Error("Sesión vencida."); }
+  const datos = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(typeof datos.detail === "string" ? datos.detail : "Error en la solicitud.");
+  return datos;
+}
+
+/* ------------------------------ sesión ------------------------------ */
+$("formLogin").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("errorLogin").textContent = "";
+  try {
+    const cuerpo = new URLSearchParams({ username: $("usuario").value, password: $("clave").value });
+    const r = await api("/api/auth/login", { method: "POST", body: cuerpo });
+    token = r.access_token;
+    sessionStorage.setItem("token", token);
+    $("clave").value = "";
+    await iniciar();
+  } catch (err) { $("errorLogin").textContent = err.message; }
+});
+
+function salir() {
+  token = null; usuario = null;
+  sessionStorage.removeItem("token");
+  $("vistaApp").classList.add("oculto"); $("sesion").classList.add("oculto");
+  $("vistaLogin").classList.remove("oculto");
+}
+$("btnSalir").onclick = salir;
+
+async function iniciar() {
+  if (!token) return salir();
+  try { usuario = await api("/api/auth/yo"); } catch { return; }
+  $("quien").textContent = `${usuario.nombre} (${usuario.rol})`;
+  $("vistaLogin").classList.add("oculto");
+  $("vistaApp").classList.remove("oculto"); $("sesion").classList.remove("oculto");
+  $("btnTabTickets").classList.toggle("oculto", usuario.rol !== "admin");
+  buscar();
+}
+
+/* ------------------------------ pestañas ---------------------------- */
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("activa", x === b));
+  ["tabEstudiantes", "tabTickets"].forEach((id) => $(id).classList.toggle("oculto", id !== b.dataset.tab));
+  if (b.dataset.tab === "tabTickets") cargarTickets();
+});
+
+/* ------------------------------ estudiantes ------------------------- */
+async function buscar() {
+  const lista = await api(`/api/estudiantes?q=${encodeURIComponent($("buscar").value)}`);
+  $("tablaEstudiantes").innerHTML = lista.map((e) => `
+    <tr class="click" data-codigo="${esc(e.codigo)}">
+      <td>${esc(e.codigo)}</td><td>${esc(e.nombre)}</td><td>${esc(e.documento)}</td>
+      <td>${esc(e.malla_version)}</td><td>${esc(e.estado)}</td>
+    </tr>`).join("") || `<tr><td colspan="5">Sin resultados</td></tr>`;
+  document.querySelectorAll("#tablaEstudiantes tr.click").forEach((tr) =>
+    tr.onclick = () => validar(tr.dataset.codigo));
+}
+$("btnBuscar").onclick = buscar;
+$("buscar").addEventListener("keydown", (e) => e.key === "Enter" && buscar());
+
+async function validar(codigo) {
+  const d = $("detalle");
+  d.classList.remove("oculto"); d.innerHTML = "Validando…";
+  try {
+    const r = await api(`/api/estudiantes/${encodeURIComponent(codigo)}/validar-malla`, { method: "POST" });
+    const c = r.creditos;
+    d.innerHTML = `
+      <h2>${esc(r.estudiante.nombre)} · ${esc(r.estudiante.codigo)}</h2>
+      <div>Malla del estudiante: <b>${esc(r.estudiante.malla_version)}</b> → malla vigente: <b>${esc(r.malla_vigente)}</b>
+        ${r.requiere_transicion ? '<span class="chip reemplazo_electiva">requiere transición</span>'
+                                : '<span class="chip directa">ya está en la malla vigente</span>'}</div>
+      <div class="kpis">
+        <div class="kpi"><b>${c.aprobados_en_historial}</b><span>Créditos aprobados (historial)</span></div>
+        <div class="kpi"><b>${c.reconocidos}</b><span>Créditos reconocidos</span></div>
+        <div class="kpi"><b>${c.pendientes}</b><span>Créditos pendientes de ${c.requeridos}</span></div>
+        <div class="kpi"><b>${r.tickets.length}</b><span>Tickets abiertos (${r.tickets_nuevos} nuevos)</span></div>
+      </div>
+
+      <h3>Homologación de materias vistas</h3>
+      <table><thead><tr><th>Materia vista</th><th>Cr.</th><th>Nota</th><th>Resultado</th><th>En malla vigente</th><th>Observación</th></tr></thead>
+      <tbody>${r.homologaciones.map((h) => `
+        <tr><td>${esc(h.materia_vista.codigo)} · ${esc(h.materia_vista.nombre)}</td>
+          <td>${h.materia_vista.creditos}</td><td>${h.materia_vista.nota}</td>
+          <td><span class="chip ${esc(h.tipo)}">${esc(h.tipo.replace("_", " "))}</span></td>
+          <td>${h.materia_destino ? `${esc(h.materia_destino.codigo)} · ${esc(h.materia_destino.nombre)}` : "—"}</td>
+          <td>${esc(h.observacion)}</td></tr>`).join("") || `<tr><td colspan="6">Sin materias aprobadas</td></tr>`}
+      </tbody></table>
+
+      <h3>Materias pendientes en la malla ${esc(r.malla_vigente)}</h3>
+      <table><thead><tr><th>Semestre</th><th>Código</th><th>Materia</th><th>Tipo</th><th>Cr.</th></tr></thead>
+      <tbody>${r.materias_pendientes.map((m) => `
+        <tr><td>${m.semestre}</td><td>${esc(m.codigo)}</td><td>${esc(m.nombre)}</td><td>${esc(m.tipo)}</td><td>${m.creditos}</td></tr>`).join("")
+        || `<tr><td colspan="5">¡No tiene materias pendientes!</td></tr>`}
+      </tbody></table>
+
+      ${r.materias_no_aprobadas.length ? `
+        <h3>Materias no aprobadas (no se homologan)</h3>
+        <table><tbody>${r.materias_no_aprobadas.map((v) => `
+          <tr><td>${esc(v.codigo)} · ${esc(v.nombre)}</td><td>Nota ${v.nota}</td><td>${esc(v.periodo)}</td></tr>`).join("")}
+        </tbody></table>` : ""}`;
+  } catch (err) { d.innerHTML = `<div class="error">${esc(err.message)}</div>`; }
+}
+
+/* ------------------------------ tickets ----------------------------- */
+async function cargarTickets() {
+  const lista = await api("/api/tickets");
+  $("tablaTickets").innerHTML = lista.map((t) => `
+    <tr><td>${esc(new Date(t.fecha_creacion).toLocaleString())}</td>
+      <td>${esc(t.codigo_estudiante)}</td>
+      <td>${esc(t.codigo_materia)} · ${esc(t.nombre_materia)} (${t.creditos} cr.)</td>
+      <td>${esc(t.motivo)}${t.resolucion ? `<br><i>Resolución: ${esc(t.resolucion)} — ${esc(t.cerrado_por)}</i>` : ""}</td>
+      <td><span class="chip ${esc(t.estado)}">${esc(t.estado)}</span></td>
+      <td>${t.estado === "abierto" ? `<button class="sec" data-id="${esc(t.id)}">Cerrar</button>` : ""}</td></tr>`).join("")
+    || `<tr><td colspan="6">No hay tickets</td></tr>`;
+  document.querySelectorAll("#tablaTickets button[data-id]").forEach((b) => b.onclick = async () => {
+    const resolucion = prompt("Describa cómo se resolvió el caso:");
+    if (!resolucion) return;
+    try {
+      await api(`/api/tickets/${encodeURIComponent(b.dataset.id)}/cerrar`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resolucion }),
+      });
+      cargarTickets();
+    } catch (err) { alert(err.message); }
+  });
+}
+
+iniciar();
+</script>
+</body>
+</html>
