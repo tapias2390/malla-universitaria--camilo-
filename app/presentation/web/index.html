@@ -4,13 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Transición de Mallas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --fondo: #f5f6f8; --panel: #ffffff; --texto: #1d2330; --suave: #5f6b7d;
     --borde: #dde1e7; --primario: #1f5fbf; --ok: #1e7f4f; --aviso: #a86500; --error: #b3261e;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); }
+  body { margin: 0; font-family: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fondo); color: var(--texto); }
+  ::selection { background: #d9d3ff; color: #241a6b; }
   header { background: var(--panel); border-bottom: 1px solid var(--borde); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
   header h1 { font-size: 18px; margin: 0; }
   main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
@@ -39,27 +43,252 @@
   .requiere_revision, .abierto { background: #fbe4e2; color: var(--error); }
   .cerrado { background: #eceff3; color: var(--suave); }
   h2 { font-size: 16px; margin: 0 0 8px; } h3 { font-size: 14px; margin: 20px 0 8px; }
-  .login { max-width: 360px; margin: 80px auto; }
+
+  /* =====================================================================
+   * LOGIN: escena ilustrada + tarjeta
+   * =================================================================== */
+  .escena {
+    --morado: #3b2d91; --morado-osc: #2c2072; --tinta: #2e2470; --gris: #5d6189;
+    --linea: #c3c9ea; --teal: #2aa6bd; --teal-osc: #1b7f95;
+    position: relative; min-height: 100vh; overflow: hidden;
+    display: grid; align-items: center; justify-items: end;
+    padding: 6vh 9vw 14vh;
+    background: linear-gradient(180deg, #c9e6f6 0%, #dff0fa 55%, #eef7fc 100%);
+  }
+  .escena svg { display: block; }
+  .fondo { position: absolute; inset: auto 0 0 0; width: 100%; height: 100%; pointer-events: none; }
+  .nube { animation: deriva 26s ease-in-out infinite alternate; }
+  .nube.n2 { animation-duration: 34s; animation-delay: -12s; }
+  .nube.n3 { animation-duration: 40s; animation-delay: -20s; }
+  .arbol, .hoja { transform-box: fill-box; transform-origin: 50% 100%; animation: mecer 6s ease-in-out infinite alternate; }
+  .arbol.a2 { animation-duration: 7.5s; animation-delay: -2s; }
+  .arbol.a3 { animation-duration: 5.5s; animation-delay: -4s; }
+  .hoja.h2 { animation-duration: 4.8s; animation-delay: -1.5s; }
+
+  .persona {
+    position: absolute; left: 10vw; bottom: 7vh; height: min(66vh, 560px); width: auto;
+    animation: subir 1.1s cubic-bezier(.16, 1, .3, 1) both .15s;
+  }
+  .persona .pantalla { animation: brillo 3.2s ease-in-out infinite; }
+  .burbuja {
+    position: absolute; left: calc(10vw - 10px); bottom: calc(7vh + min(66vh, 560px) * .78);
+    width: 92px; animation: subir 1s cubic-bezier(.16, 1, .3, 1) both .5s;
+  }
+  .burbuja svg { animation: flotar 4s ease-in-out infinite; }
+
+  .tarjeta {
+    position: relative; z-index: 1;
+    width: min(440px, 100%); padding: 52px 46px 44px;
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 30px 60px -24px rgba(46, 36, 112, .35), 0 6px 16px -8px rgba(46, 36, 112, .18);
+    animation: entrar .9s cubic-bezier(.16, 1, .3, 1) both;
+    transition: transform .35s cubic-bezier(.4, 0, 1, 1), opacity .35s, filter .35s;
+  }
+  .tarjeta.saliendo { animation: none; transform: scale(.96) translateY(-8px); opacity: 0; filter: blur(4px); }
+  .tarjeta.error { animation: temblar .42s cubic-bezier(.36, .07, .19, .97); }
+  .tarjeta h2 {
+    margin: 0 0 10px; font-size: clamp(28px, 3vw, 34px); line-height: 1.12;
+    font-weight: 700; letter-spacing: -.02em; color: var(--tinta); text-wrap: balance;
+  }
+  .tarjeta .intro { margin: 0 0 34px; color: var(--gris); font-size: 14px; line-height: 1.55; max-width: 32ch; }
+  .tarjeta form > * { animation: aparecer .7s cubic-bezier(.16, 1, .3, 1) both; }
+  .tarjeta form > :nth-child(1) { animation-delay: .25s; }
+  .tarjeta form > :nth-child(2) { animation-delay: .32s; }
+  .tarjeta form > :nth-child(3) { animation-delay: .39s; }
+  .tarjeta form > :nth-child(4) { animation-delay: .46s; }
+
+  .campo { position: relative; margin-bottom: 18px; }
+  .campo input {
+    width: 100%; height: 50px; padding: 18px 48px 6px 48px;
+    border: 1.5px solid var(--linea); border-radius: 999px; background: #fff;
+    font: inherit; font-size: 15px; color: var(--tinta); caret-color: var(--morado);
+    transition: border-color .2s, box-shadow .25s;
+  }
+  .campo input:hover { border-color: #a3abdc; }
+  .campo input:focus { outline: none; border-color: var(--morado); box-shadow: 0 0 0 4px rgba(59, 45, 145, .12); }
+  .campo label {
+    position: absolute; left: 48px; top: 15px; margin: 0;
+    font-size: 15px; color: var(--gris); pointer-events: none;
+    transform-origin: left top; transition: transform .25s cubic-bezier(.16, 1, .3, 1), color .2s;
+  }
+  .campo input:focus + label,
+  .campo input:not(:placeholder-shown) + label { transform: translateY(-9px) scale(.72); color: var(--morado); }
+  .campo .icono {
+    position: absolute; left: 18px; top: 50%; translate: 0 -50%;
+    width: 18px; height: 18px; color: #8a90b8; transition: color .2s;
+  }
+  .campo:focus-within .icono { color: var(--morado); }
+  .ver-clave {
+    position: absolute; right: 8px; top: 50%; translate: 0 -50%;
+    width: 36px; height: 36px; padding: 0; display: grid; place-items: center;
+    background: transparent; color: #8a90b8; border-radius: 50%;
+  }
+  .ver-clave:hover { color: var(--morado); background: #f1effb; }
+  .ver-clave svg { width: 18px; height: 18px; }
+  .ver-clave .tachado { opacity: 0; transition: opacity .2s; }
+  .ver-clave[aria-pressed="true"] .tachado { opacity: 1; }
+
+  .opciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 4px 4px 26px; font-size: 13px; }
+  .recordar { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--gris); font-size: 13px; cursor: pointer; }
+  .recordar input { appearance: none; width: 16px; height: 16px; margin: 0; padding: 0; border: 1.5px solid #a3abdc; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: border-color .2s; }
+  .recordar input::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--morado); transform: scale(0); transition: transform .2s cubic-bezier(.16, 1, .3, 1); }
+  .recordar input:checked { border-color: var(--morado); }
+  .recordar input:checked::after { transform: scale(1); }
+  .enlace { background: none; padding: 0; color: var(--gris); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #c3c9ea; }
+  .enlace:hover { color: var(--morado); text-decoration-color: currentColor; }
+  .ayuda { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.16, 1, .3, 1); }
+  .ayuda > p { overflow: hidden; margin: 0; font-size: 13px; line-height: 1.5; color: var(--gris); }
+  .ayuda.visible { grid-template-rows: 1fr; }
+  .ayuda.visible > p { margin: -12px 4px 22px; }
+
+  .btn-entrar {
+    position: relative; width: 100%; height: 50px; border-radius: 999px;
+    background: var(--morado); color: #fff; font-weight: 600; font-size: 15px; letter-spacing: .01em;
+    box-shadow: 0 10px 22px -10px rgba(59, 45, 145, .7);
+    transition: background .2s, transform .2s cubic-bezier(.16, 1, .3, 1), box-shadow .2s;
+  }
+  .btn-entrar:hover { background: var(--morado-osc); transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(59, 45, 145, .8); }
+  .btn-entrar:active { transform: translateY(0) scale(.985); }
+  .btn-entrar:disabled { cursor: progress; background: #5a4db0; transform: none; }
+  .btn-entrar .giro { display: none; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff; border-radius: 50%; animation: girar .7s linear infinite; }
+  .btn-entrar.cargando .giro { display: inline-block; }
+  #errorLogin:empty { display: none; }
+  #errorLogin { margin-top: 16px; text-align: center; }
+
+  .escena :focus-visible { outline: 2px solid var(--morado); outline-offset: 3px; }
+  .campo input:focus-visible { outline: none; }
+
+  @keyframes entrar { from { opacity: 0; transform: translateX(36px); filter: blur(6px); } }
+  @keyframes aparecer { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes subir { from { opacity: 0; transform: translateY(28px); } }
+  @keyframes deriva { to { transform: translateX(70px); } }
+  @keyframes mecer { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
+  @keyframes flotar { 50% { transform: translateY(-8px); } }
+  @keyframes brillo { 50% { opacity: .78; } }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  @keyframes temblar { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+  @media (max-width: 900px) {
+    .escena { justify-items: center; padding: 8vh 16px 22vh; }
+    .escena .persona, .escena .burbuja { display: none; }
+    .tarjeta { padding: 40px 26px 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .escena *, .escena *::after { animation: none !important; transition: none !important; }
+  }
 </style>
 </head>
 <body>
 
-<header>
+<header id="barra" class="oculto">
   <h1>Transición de mallas curriculares</h1>
   <div id="sesion" class="fila oculto"><span id="quien"></span><button class="sec" id="btnSalir">Salir</button></div>
 </header>
 
 <!-- ============ LOGIN ============ -->
-<section id="vistaLogin" class="panel login">
-  <h2>Iniciar sesión</h2>
-  <form id="formLogin">
-    <label for="usuario">Usuario</label>
-    <input id="usuario" autocomplete="username" required>
-    <label for="clave">Contraseña</label>
-    <input id="clave" type="password" autocomplete="current-password" required>
-    <div style="margin-top:16px"><button type="submit">Entrar</button></div>
-    <div id="errorLogin" class="error"></div>
-  </form>
+<section id="vistaLogin" class="escena">
+
+  <!-- Paisaje de fondo: colinas, árboles, plantas y nubes (SVG propio) -->
+  <svg class="fondo" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <g fill="#fff">
+      <g class="nube" opacity=".9"><ellipse cx="190" cy="150" rx="70" ry="26"/><ellipse cx="240" cy="132" rx="46" ry="32"/><ellipse cx="150" cy="140" rx="34" ry="22"/></g>
+      <g class="nube n2" opacity=".75"><ellipse cx="760" cy="96" rx="80" ry="24"/><ellipse cx="808" cy="80" rx="44" ry="28"/></g>
+      <g class="nube n3" opacity=".85"><ellipse cx="1230" cy="210" rx="74" ry="24"/><ellipse cx="1190" cy="196" rx="40" ry="26"/><ellipse cx="1262" cy="192" rx="36" ry="22"/></g>
+      <g class="nube" opacity=".6"><ellipse cx="520" cy="300" rx="56" ry="18"/><ellipse cx="548" cy="288" rx="30" ry="18"/></g>
+    </g>
+    <path d="M0 700 Q200 630 430 690 T900 680 T1440 660 V900 H0Z" fill="#bfe2ea"/>
+    <path d="M0 760 Q360 720 760 752 T1440 740 V900 H0Z" fill="#a9d7e2" opacity=".55"/>
+    <path d="M0 800 Q720 760 1440 800 V900 H0Z" fill="#eaf6fb"/>
+
+    <!-- Árboles -->
+    <g class="arbol"><line x1="610" y1="810" x2="610" y2="700" stroke="#1b7f95" stroke-width="4"/><path d="M610 600 C646 640 648 726 610 770 C572 726 574 640 610 600Z" fill="#2aa6bd"/><path d="M610 620 V760" stroke="#1b7f95" stroke-width="2"/></g>
+    <g class="arbol a2"><line x1="660" y1="812" x2="660" y2="750" stroke="#1b7f95" stroke-width="3"/><path d="M660 690 C682 714 684 762 660 790 C636 762 638 714 660 690Z" fill="#53bfd1"/></g>
+    <g class="arbol a3"><line x1="1300" y1="806" x2="1300" y2="680" stroke="#1b7f95" stroke-width="4"/><path d="M1300 560 C1342 606 1344 708 1300 760 C1256 708 1258 606 1300 560Z" fill="#2aa6bd"/><path d="M1300 584 V748" stroke="#1b7f95" stroke-width="2"/></g>
+    <g class="arbol"><line x1="1360" y1="808" x2="1360" y2="740" stroke="#1b7f95" stroke-width="3"/><path d="M1360 670 C1386 698 1388 754 1360 786 C1332 754 1334 698 1360 670Z" fill="#53bfd1"/></g>
+
+    <!-- Hojas grandes -->
+    <g class="hoja"><path d="M1040 820 C990 760 1000 690 1060 660 C1090 720 1080 780 1040 820Z" fill="#1b7f95"/><path d="M1040 820 C1036 760 1046 710 1060 664" stroke="#9fdbe6" stroke-width="2" fill="none"/></g>
+    <g class="hoja h2"><path d="M1060 824 C1120 790 1170 740 1150 680 C1090 700 1060 760 1060 824Z" fill="#2aa6bd"/><path d="M1060 824 C1090 770 1120 720 1148 684" stroke="#bde8ef" stroke-width="2" fill="none"/></g>
+
+    <!-- Matera con flores -->
+    <g class="hoja h2">
+      <path d="M190 840 C186 790 170 760 150 740 M200 840 C204 780 230 750 250 734 M196 840 C196 800 196 770 200 730" stroke="#3b2d91" stroke-width="3" fill="none"/>
+      <ellipse cx="160" cy="764" rx="16" ry="7" fill="#3b2d91" transform="rotate(-35 160 764)"/>
+      <ellipse cx="236" cy="760" rx="16" ry="7" fill="#3b2d91" transform="rotate(30 236 760)"/>
+      <ellipse cx="182" cy="790" rx="14" ry="6" fill="#4b3ca8" transform="rotate(-20 182 790)"/>
+      <circle cx="150" cy="738" r="9" fill="#fff"/><circle cx="150" cy="738" r="3" fill="#f4c34d"/>
+      <circle cx="250" cy="732" r="9" fill="#fff"/><circle cx="250" cy="732" r="3" fill="#f4c34d"/>
+      <circle cx="200" cy="726" r="8" fill="#fff"/><circle cx="200" cy="726" r="3" fill="#f4c34d"/>
+    </g>
+    <path d="M166 832 H226 L218 880 C216 888 176 888 174 880Z" fill="#2c2072"/>
+  </svg>
+
+  <!-- Burbuja de chat flotante -->
+  <div class="burbuja" aria-hidden="true">
+    <svg viewBox="0 0 92 64"><path d="M10 4 H82 A8 8 0 0 1 90 12 V40 A8 8 0 0 1 82 48 H34 L20 60 L22 48 H10 A8 8 0 0 1 2 40 V12 A8 8 0 0 1 10 4Z" fill="#a8dcf2"/><rect x="16" y="17" width="58" height="6" rx="3" fill="#fff"/><rect x="16" y="29" width="38" height="6" rx="3" fill="#fff"/></svg>
+  </div>
+
+  <!-- Persona con laptop -->
+  <svg class="persona" viewBox="0 0 300 560" aria-hidden="true">
+    <ellipse cx="160" cy="540" rx="96" ry="10" fill="#2c2072" opacity=".12"/>
+    <!-- pantalón ancho -->
+    <path d="M118 250 H204 L232 522 H182 L162 330 L146 524 H94Z" fill="#3b2d91"/>
+    <path d="M162 330 L160 260" stroke="#2c2072" stroke-width="2"/>
+    <ellipse cx="118" cy="528" rx="28" ry="9" fill="#21185c"/>
+    <ellipse cx="210" cy="526" rx="28" ry="9" fill="#21185c"/>
+    <!-- brazo derecho a la cintura -->
+    <path d="M198 162 Q232 196 226 222 Q220 240 204 246" stroke="#2a8fd6" stroke-width="22" stroke-linecap="round" fill="none"/>
+    <circle cx="204" cy="246" r="9" fill="#f2b9a1"/>
+    <!-- torso -->
+    <path d="M120 156 Q160 138 200 156 L210 258 H112Z" fill="#2f9ae0"/>
+    <path d="M146 146 Q160 160 174 146" stroke="#1f7cc0" stroke-width="3" fill="none"/>
+    <!-- cuello y cabeza -->
+    <rect x="151" y="120" width="18" height="28" rx="6" fill="#f2b9a1"/>
+    <ellipse cx="161" cy="100" rx="23" ry="27" fill="#f2b9a1"/>
+    <path d="M138 106 Q132 70 161 70 Q192 70 186 104 Q184 90 172 86 Q156 84 146 96 Q140 104 138 116Z" fill="#2a2152"/>
+    <circle cx="178" cy="62" r="14" fill="#2a2152"/>
+    <path d="M184 100 Q192 122 182 134" stroke="#2a2152" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <!-- laptop -->
+    <path d="M14 168 L96 150 L106 226 L24 246Z" fill="#8fb4e3"/>
+    <path class="pantalla" d="M22 176 L90 161 L98 220 L30 236Z" fill="#cfe3fa"/>
+    <path d="M52 194 C58 186 66 188 66 196 C66 204 58 210 56 212 C54 210 48 204 52 194Z" fill="#8fb4e3"/>
+    <path d="M24 246 L106 226 L118 234 L34 256Z" fill="#6f95c8"/>
+    <!-- brazo izquierdo sosteniendo la laptop -->
+    <path d="M124 164 Q98 196 100 222 L70 236" stroke="#2a8fd6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <ellipse cx="66" cy="236" rx="10" ry="8" fill="#f2b9a1"/>
+  </svg>
+
+  <!-- Tarjeta de acceso -->
+  <div class="tarjeta" id="tarjetaLogin">
+    <h2>Bienvenido de nuevo</h2>
+    <p class="intro">Consulta la malla vigente y valida la transición de cada estudiante.</p>
+    <form id="formLogin" novalidate>
+      <div class="campo">
+        <input id="usuario" autocomplete="username" placeholder=" " required>
+        <label for="usuario">Usuario</label>
+        <svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+      </div>
+      <div class="campo">
+        <input id="clave" type="password" autocomplete="current-password" placeholder=" " required>
+        <label for="clave">Contraseña</label>
+        <svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>
+        <button type="button" class="ver-clave" id="verClave" aria-label="Mostrar contraseña" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path class="tachado" d="M4 20 20 4"/></svg>
+        </button>
+      </div>
+      <div>
+        <div class="opciones">
+          <label class="recordar"><input type="checkbox" id="recordar"> Recordar usuario</label>
+          <button type="button" class="enlace" id="olvide" aria-controls="ayudaClave" aria-expanded="false">¿Olvidaste tu contraseña?</button>
+        </div>
+        <div class="ayuda" id="ayudaClave"><p>Pídele al administrador que te asigne una contraseña nueva en el archivo de usuarios.</p></div>
+      </div>
+      <div>
+        <button type="submit" class="btn-entrar" id="btnEntrar"><span class="giro" aria-hidden="true"></span><span id="txtEntrar">Iniciar sesión</span></button>
+        <div id="errorLogin" class="error" role="alert"></div>
+      </div>
+    </form>
+  </div>
 </section>
 
 <!-- ============ APP ============ -->
@@ -119,23 +348,71 @@ async function api(ruta, opciones = {}) {
 }
 
 /* ------------------------------ sesión ------------------------------ */
+// "Recordar usuario": solo se guarda el nombre de usuario, nunca la contraseña.
+const CLAVE_RECORDAR = "usuarioRecordado";
+try {
+  const recordado = localStorage.getItem(CLAVE_RECORDAR);
+  if (recordado) { $("usuario").value = recordado; $("recordar").checked = true; }
+} catch { /* almacenamiento no disponible: se ignora */ }
+
+const sinAnimacion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+$("verClave").onclick = () => {
+  const mostrar = $("clave").type === "password";
+  $("clave").type = mostrar ? "text" : "password";
+  $("verClave").setAttribute("aria-pressed", String(mostrar));
+  $("verClave").setAttribute("aria-label", mostrar ? "Ocultar contraseña" : "Mostrar contraseña");
+};
+
+$("olvide").onclick = () => {
+  const abierta = $("ayudaClave").classList.toggle("visible");
+  $("olvide").setAttribute("aria-expanded", String(abierta));
+};
+
 $("formLogin").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const tarjeta = $("tarjetaLogin"), boton = $("btnEntrar");
   $("errorLogin").textContent = "";
+
+  if (!$("usuario").value.trim() || !$("clave").value) {
+    return mostrarErrorLogin("Escribe tu usuario y tu contraseña.");
+  }
+
+  boton.disabled = true; boton.classList.add("cargando"); $("txtEntrar").textContent = "Entrando…";
   try {
     const cuerpo = new URLSearchParams({ username: $("usuario").value, password: $("clave").value });
     const r = await api("/api/auth/login", { method: "POST", body: cuerpo });
     token = r.access_token;
     sessionStorage.setItem("token", token);
+    try {
+      if ($("recordar").checked) localStorage.setItem(CLAVE_RECORDAR, $("usuario").value.trim());
+      else localStorage.removeItem(CLAVE_RECORDAR);
+    } catch { /* se ignora */ }
     $("clave").value = "";
+    // Pequeña salida animada de la tarjeta antes de mostrar la aplicación.
+    tarjeta.classList.add("saliendo");
+    await new Promise((ok) => setTimeout(ok, sinAnimacion() ? 0 : 360));
     await iniciar();
-  } catch (err) { $("errorLogin").textContent = err.message; }
+  } catch (err) {
+    mostrarErrorLogin(err.message);
+  } finally {
+    boton.disabled = false; boton.classList.remove("cargando"); $("txtEntrar").textContent = "Iniciar sesión";
+  }
 });
+
+function mostrarErrorLogin(mensaje) {
+  const tarjeta = $("tarjetaLogin");
+  $("errorLogin").textContent = mensaje;
+  tarjeta.classList.remove("error");
+  void tarjeta.offsetWidth;            // reinicia la animación de "temblor"
+  tarjeta.classList.add("error");
+}
 
 function salir() {
   token = null; usuario = null;
   sessionStorage.removeItem("token");
-  $("vistaApp").classList.add("oculto"); $("sesion").classList.add("oculto");
+  $("vistaApp").classList.add("oculto"); $("sesion").classList.add("oculto"); $("barra").classList.add("oculto");
+  $("tarjetaLogin").classList.remove("saliendo", "error");
   $("vistaLogin").classList.remove("oculto");
 }
 $("btnSalir").onclick = salir;
@@ -145,7 +422,7 @@ async function iniciar() {
   try { usuario = await api("/api/auth/yo"); } catch { return; }
   $("quien").textContent = `${usuario.nombre} (${usuario.rol})`;
   $("vistaLogin").classList.add("oculto");
-  $("vistaApp").classList.remove("oculto"); $("sesion").classList.remove("oculto");
+  $("vistaApp").classList.remove("oculto"); $("sesion").classList.remove("oculto"); $("barra").classList.remove("oculto");
   $("btnTabTickets").classList.toggle("oculto", usuario.rol !== "admin");
   buscar();
 }
