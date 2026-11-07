@@ -71,26 +71,34 @@ class FuenteGoogleDrive:
 
     SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 
+    REINTENTOS = 3
+
     def __init__(self, link_o_id: str, ruta_credenciales: str | Path) -> None:
         self._file_id = extraer_id_drive(link_o_id)
         self._ruta_credenciales = Path(ruta_credenciales)
-        self._servicio = None  # se crea la primera vez que se usa
+        self._credenciales = None  # se cargan la primera vez que se usan
 
     def _cliente(self):
-        if self._servicio is None:
-            # Importación diferida: el modo local no necesita estas librerías.
-            from google.oauth2 import service_account
-            from googleapiclient.discovery import build
+        """Crea un cliente NUEVO en cada descarga.
 
+        El transporte HTTP de la librería de Google (httplib2) no es seguro entre
+        hilos y FastAPI atiende las peticiones en hilos distintos; compartir un
+        único cliente provocaba errores intermitentes. Las credenciales sí se
+        reutilizan (son seguras y guardan el token de acceso).
+        """
+        # Importación diferida: el modo local no necesita estas librerías.
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+
+        if self._credenciales is None:
             if not self._ruta_credenciales.exists():
                 raise ErrorFuenteDatos(
                     f"No se encontró el archivo de credenciales '{self._ruta_credenciales}'."
                 )
-            credenciales = service_account.Credentials.from_service_account_file(
+            self._credenciales = service_account.Credentials.from_service_account_file(
                 str(self._ruta_credenciales), scopes=self.SCOPES
             )
-            self._servicio = build("drive", "v3", credentials=credenciales, cache_discovery=False)
-        return self._servicio
+        return build("drive", "v3", credentials=self._credenciales, cache_discovery=False)
 
     def obtener_bytes(self) -> bytes:
         from googleapiclient.errors import HttpError
@@ -100,7 +108,7 @@ class FuenteGoogleDrive:
             archivos = self._cliente().files()
             meta = archivos.get(
                 fileId=self._file_id, fields="name,mimeType", supportsAllDrives=True
-            ).execute()
+            ).execute(num_retries=self.REINTENTOS)
 
             if meta["mimeType"] == MIME_GOOGLE_SHEET:
                 peticion = archivos.export_media(fileId=self._file_id, mimeType=MIME_XLSX)
@@ -111,13 +119,20 @@ class FuenteGoogleDrive:
             descarga = MediaIoBaseDownload(buffer, peticion)
             terminado = False
             while not terminado:
-                _, terminado = descarga.next_chunk()
+                _, terminado = descarga.next_chunk(num_retries=self.REINTENTOS)
             log.info("Descargado de Drive: %s", meta["name"])
             return buffer.getvalue()
         except HttpError as exc:
             raise ErrorFuenteDatos(
                 f"Error leyendo el archivo de Drive ({exc.status_code}). "
                 "¿Está compartido con la cuenta de servicio?"
+            ) from exc
+        except ErrorFuenteDatos:
+            raise
+        except Exception as exc:  # red caída, SSL, tiempo agotado, credenciales dañadas...
+            log.exception("Fallo de conexión con Google Drive")
+            raise ErrorFuenteDatos(
+                f"No se pudo conectar con Google Drive ({type(exc).__name__}). Intente de nuevo."
             ) from exc
 
 

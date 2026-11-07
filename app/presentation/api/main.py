@@ -58,6 +58,16 @@ def crear_app(settings: Settings | None = None) -> FastAPI:
         cabeceras = {"WWW-Authenticate": "Bearer"} if codigo == status.HTTP_401_UNAUTHORIZED else None
         return JSONResponse(status_code=codigo, content={"detail": mensaje}, headers=cabeceras)
 
+    @app.exception_handler(Exception)
+    async def manejar_error_inesperado(_: Request, exc: Exception) -> JSONResponse:
+        # Cualquier fallo no previsto: se registra completo en la consola del
+        # servidor y al usuario se le da un mensaje claro (sin detalles internos).
+        log.exception("Error inesperado", exc_info=exc)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Ocurrió un error inesperado en el servidor. Revise la consola."},
+        )
+
     app.include_router(auth.router)
     app.include_router(academico.router)
     app.include_router(tickets.router)

@@ -343,7 +343,7 @@ async function api(ruta, opciones = {}) {
   });
   if (resp.status === 401 && ruta !== "/api/auth/login") { salir(); throw new Error("Sesión vencida."); }
   const datos = await resp.json().catch(() => ({}));
-  if (!resp.ok) throw new Error(typeof datos.detail === "string" ? datos.detail : "Error en la solicitud.");
+  if (!resp.ok) throw new Error(typeof datos.detail === "string" ? datos.detail : `Error en la solicitud (código ${resp.status}).`);
   return datos;
 }
 
