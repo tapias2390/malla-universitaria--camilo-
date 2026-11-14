@@ -6,6 +6,7 @@ from typing import Annotated, Callable
 from fastapi import Depends, Request
 from fastapi.security import OAuth2PasswordBearer
 
+from app.application.use_cases.auditoria import Actor
 from app.application.use_cases.autenticacion import UsuarioAutenticado
 from app.bootstrap import Contenedor
 from app.domain.entities import Rol
@@ -22,6 +23,10 @@ def obtener_contenedor(request: Request) -> Contenedor:
 ContenedorDep = Annotated[Contenedor, Depends(obtener_contenedor)]
 
 
+def ip_cliente(request: Request) -> str:
+    return request.client.host if request.client else ""
+
+
 def usuario_actual(token: Annotated[str, Depends(oauth2)], contenedor: ContenedorDep) -> UsuarioAutenticado:
     """Valida el JWT del encabezado `Authorization: Bearer <token>`."""
     return contenedor.validar_token.ejecutar(token)
@@ -30,12 +35,19 @@ def usuario_actual(token: Annotated[str, Depends(oauth2)], contenedor: Contenedo
 UsuarioDep = Annotated[UsuarioAutenticado, Depends(usuario_actual)]
 
 
-def requiere_rol(*roles: Rol) -> Callable[[UsuarioAutenticado], UsuarioAutenticado]:
-    """Uso: `Depends(requiere_rol(Rol.ADMIN))`."""
+def requiere_rol(*roles: Rol) -> Callable[..., Actor]:
+    """Exige uno de los `roles` y entrega el Actor (usuario + IP) para la auditoría."""
 
-    def verificar(usuario: UsuarioDep) -> UsuarioAutenticado:
+    def verificar(request: Request, usuario: UsuarioDep) -> Actor:
         if usuario.rol not in roles:
             raise AccesoDenegado("No tiene permisos para esta operación.")
-        return usuario
+        return usuario.como_actor(ip_cliente(request))
 
     return verificar
+
+
+# Atajos para las rutas
+AdminDep = Annotated[Actor, Depends(requiere_rol(Rol.ADMIN))]
+PersonalDep = Annotated[Actor, Depends(requiere_rol(Rol.ADMIN, Rol.CONSULTOR))]
+EstudianteDep = Annotated[Actor, Depends(requiere_rol(Rol.ESTUDIANTE))]
+CualquieraDep = Annotated[Actor, Depends(requiere_rol(*Rol))]

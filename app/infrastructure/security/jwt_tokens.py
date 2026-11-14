@@ -21,6 +21,7 @@ class JwtServicioTokens:
             "sub": usuario.username,
             "nombre": usuario.nombre,
             "rol": usuario.rol.value,
+            "est": usuario.codigo_estudiante,   # solo tiene valor en cuentas de estudiante
             "iat": ahora,
             "exp": ahora + self._expiracion,
         }

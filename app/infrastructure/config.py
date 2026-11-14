@@ -26,11 +26,12 @@ class Settings(BaseSettings):
     cache_segundos: int = 300
 
     # --- Reglas académicas ---
-    malla_vigente: str = "2025"
+    malla_vigente: str = "2026"
     nota_minima: float = 3.0
 
-    # --- Tickets ---
+    # --- Archivos locales de la aplicación ---
     tickets_path: str = "data/tickets.json"
+    auditoria_path: str = "data/auditoria.jsonl"
 
     @field_validator("jwt_secret")
     @classmethod

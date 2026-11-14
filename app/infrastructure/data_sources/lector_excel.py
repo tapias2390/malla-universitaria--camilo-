@@ -80,6 +80,16 @@ def como_decimal(valor: object, por_defecto: float = 0.0) -> float:
         return por_defecto
 
 
+def como_decimal_opcional(valor: object) -> float | None:
+    """Como `como_decimal`, pero una celda vacía (o sin número) da None en vez de 0."""
+    if valor is None or como_texto(valor) == "":
+        return None
+    try:
+        return float(str(valor).replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+
 def como_booleano(valor: object) -> bool:
     if isinstance(valor, bool):
         return valor

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.domain.exceptions import CredencialesInvalidas
-from app.presentation.api.dependencies import ContenedorDep, UsuarioDep
+from app.presentation.api.dependencies import ContenedorDep, UsuarioDep, ip_cliente
 from app.presentation.api.limitador import LimitadorIntentos
 from app.presentation.api.schemas import TokenOut, UsuarioOut
 
@@ -21,7 +21,7 @@ def login(
     formulario: Annotated[OAuth2PasswordRequestForm, Depends()],
     contenedor: ContenedorDep,
 ) -> TokenOut:
-    ip = request.client.host if request.client else "desconocida"
+    ip = ip_cliente(request) or "desconocida"
     clave = f"{ip}:{formulario.username.strip().lower()}"
 
     if limitador.bloqueado(clave):
@@ -30,7 +30,7 @@ def login(
             "Demasiados intentos fallidos. Intente de nuevo en unos minutos.",
         )
     try:
-        token = contenedor.iniciar_sesion.ejecutar(formulario.username, formulario.password)
+        token = contenedor.iniciar_sesion.ejecutar(formulario.username, formulario.password, ip)
     except CredencialesInvalidas:
         limitador.registrar_fallo(clave)
         raise
