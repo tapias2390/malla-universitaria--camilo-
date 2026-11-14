@@ -1,0 +1,132 @@
+/* =====================================================================
+   * LOGIN: escena ilustrada + tarjeta
+   * =================================================================== */
+  .escena {
+    --morado: #3b2d91; --morado-osc: #2c2072; --tinta: #2e2470; --gris: #5d6189;
+    --linea: #c3c9ea; --teal: #2aa6bd; --teal-osc: #1b7f95;
+    position: relative; min-height: 100vh; overflow: hidden;
+    display: grid; align-items: center; justify-items: end;
+    padding: 6vh 9vw 14vh;
+    background: linear-gradient(180deg, #c9e6f6 0%, #dff0fa 55%, #eef7fc 100%);
+  }
+  .escena svg { display: block; }
+  .fondo { position: absolute; inset: auto 0 0 0; width: 100%; height: 100%; pointer-events: none; }
+  .nube { animation: deriva 26s ease-in-out infinite alternate; }
+  .nube.n2 { animation-duration: 34s; animation-delay: -12s; }
+  .nube.n3 { animation-duration: 40s; animation-delay: -20s; }
+  .arbol, .hoja { transform-box: fill-box; transform-origin: 50% 100%; animation: mecer 6s ease-in-out infinite alternate; }
+  .arbol.a2 { animation-duration: 7.5s; animation-delay: -2s; }
+  .arbol.a3 { animation-duration: 5.5s; animation-delay: -4s; }
+  .hoja.h2 { animation-duration: 4.8s; animation-delay: -1.5s; }
+
+  .persona {
+    position: absolute; left: 10vw; bottom: 7vh; height: min(66vh, 560px); width: auto;
+    animation: subir 1.1s cubic-bezier(.16, 1, .3, 1) both .15s;
+  }
+  .persona .pantalla { animation: brillo 3.2s ease-in-out infinite; }
+  .burbuja {
+    position: absolute; left: calc(10vw - 10px); bottom: calc(7vh + min(66vh, 560px) * .78);
+    width: 92px; animation: subir 1s cubic-bezier(.16, 1, .3, 1) both .5s;
+  }
+  .burbuja svg { animation: flotar 4s ease-in-out infinite; }
+
+  .tarjeta {
+    position: relative; z-index: 1;
+    width: min(440px, 100%); padding: 52px 46px 44px;
+    background: #fff; border-radius: 14px;
+    box-shadow: 0 30px 60px -24px rgba(46, 36, 112, .35), 0 6px 16px -8px rgba(46, 36, 112, .18);
+    animation: entrar .9s cubic-bezier(.16, 1, .3, 1) both;
+    transition: transform .35s cubic-bezier(.4, 0, 1, 1), opacity .35s, filter .35s;
+  }
+  .tarjeta.saliendo { animation: none; transform: scale(.96) translateY(-8px); opacity: 0; filter: blur(4px); }
+  .tarjeta.error { animation: temblar .42s cubic-bezier(.36, .07, .19, .97); }
+  .tarjeta h2 {
+    margin: 0 0 10px; font-size: clamp(28px, 3vw, 34px); line-height: 1.12;
+    font-weight: 700; letter-spacing: -.02em; color: var(--tinta); text-wrap: balance;
+  }
+  .tarjeta .intro { margin: 0 0 34px; color: var(--gris); font-size: 14px; line-height: 1.55; max-width: 32ch; }
+  .tarjeta form > * { animation: aparecer .7s cubic-bezier(.16, 1, .3, 1) both; }
+  .tarjeta form > :nth-child(1) { animation-delay: .25s; }
+  .tarjeta form > :nth-child(2) { animation-delay: .32s; }
+  .tarjeta form > :nth-child(3) { animation-delay: .39s; }
+  .tarjeta form > :nth-child(4) { animation-delay: .46s; }
+
+  .campo { position: relative; margin-bottom: 18px; }
+  .campo input {
+    width: 100%; height: 50px; padding: 18px 48px 6px 48px;
+    border: 1.5px solid var(--linea); border-radius: 999px; background: #fff;
+    font: inherit; font-size: 15px; color: var(--tinta); caret-color: var(--morado);
+    transition: border-color .2s, box-shadow .25s;
+  }
+  .campo input:hover { border-color: #a3abdc; }
+  .campo input:focus { outline: none; border-color: var(--morado); box-shadow: 0 0 0 4px rgba(59, 45, 145, .12); }
+  .campo label {
+    position: absolute; left: 48px; top: 15px; margin: 0;
+    font-size: 15px; color: var(--gris); pointer-events: none;
+    transform-origin: left top; transition: transform .25s cubic-bezier(.16, 1, .3, 1), color .2s;
+  }
+  .campo input:focus + label,
+  .campo input:not(:placeholder-shown) + label { transform: translateY(-9px) scale(.72); color: var(--morado); }
+  .campo .icono {
+    position: absolute; left: 18px; top: 50%; translate: 0 -50%;
+    width: 18px; height: 18px; color: #8a90b8; transition: color .2s;
+  }
+  .campo:focus-within .icono { color: var(--morado); }
+  .ver-clave {
+    position: absolute; right: 8px; top: 50%; translate: 0 -50%;
+    width: 36px; height: 36px; padding: 0; display: grid; place-items: center;
+    background: transparent; color: #8a90b8; border-radius: 50%;
+  }
+  .ver-clave:hover { color: var(--morado); background: #f1effb; }
+  .ver-clave svg { width: 18px; height: 18px; }
+  .ver-clave .tachado { opacity: 0; transition: opacity .2s; }
+  .ver-clave[aria-pressed="true"] .tachado { opacity: 1; }
+
+  .opciones { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 4px 4px 26px; font-size: 13px; }
+  .recordar { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--gris); font-size: 13px; cursor: pointer; }
+  .recordar input { appearance: none; width: 16px; height: 16px; margin: 0; padding: 0; border: 1.5px solid #a3abdc; border-radius: 50%; display: grid; place-items: center; cursor: pointer; transition: border-color .2s; }
+  .recordar input::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--morado); transform: scale(0); transition: transform .2s cubic-bezier(.16, 1, .3, 1); }
+  .recordar input:checked { border-color: var(--morado); }
+  .recordar input:checked::after { transform: scale(1); }
+  .enlace { background: none; padding: 0; color: var(--gris); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #c3c9ea; }
+  .enlace:hover { color: var(--morado); text-decoration-color: currentColor; }
+  .ayuda { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s cubic-bezier(.16, 1, .3, 1); }
+  .ayuda > p { overflow: hidden; margin: 0; font-size: 13px; line-height: 1.5; color: var(--gris); }
+  .ayuda.visible { grid-template-rows: 1fr; }
+  .ayuda.visible > p { margin: -12px 4px 22px; }
+
+  .btn-entrar {
+    position: relative; width: 100%; height: 50px; border-radius: 999px;
+    background: var(--morado); color: #fff; font-weight: 600; font-size: 15px; letter-spacing: .01em;
+    box-shadow: 0 10px 22px -10px rgba(59, 45, 145, .7);
+    transition: background .2s, transform .2s cubic-bezier(.16, 1, .3, 1), box-shadow .2s;
+  }
+  .btn-entrar:hover { background: var(--morado-osc); transform: translateY(-1px); box-shadow: 0 14px 26px -12px rgba(59, 45, 145, .8); }
+  .btn-entrar:active { transform: translateY(0) scale(.985); }
+  .btn-entrar:disabled { cursor: progress; background: #5a4db0; transform: none; }
+  .btn-entrar .giro { display: none; width: 16px; height: 16px; margin-right: 10px; vertical-align: -3px; border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff; border-radius: 50%; animation: girar .7s linear infinite; }
+  .btn-entrar.cargando .giro { display: inline-block; }
+  #errorLogin:empty { display: none; }
+  #errorLogin { margin-top: 16px; text-align: center; }
+
+  .escena :focus-visible { outline: 2px solid var(--morado); outline-offset: 3px; }
+  .campo input:focus-visible { outline: none; }
+
+  @keyframes entrar { from { opacity: 0; transform: translateX(36px); filter: blur(6px); } }
+  @keyframes aparecer { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes subir { from { opacity: 0; transform: translateY(28px); } }
+  @keyframes deriva { to { transform: translateX(70px); } }
+  @keyframes mecer { from { transform: rotate(-2.2deg); } to { transform: rotate(2.2deg); } }
+  @keyframes flotar { 50% { transform: translateY(-8px); } }
+  @keyframes brillo { 50% { opacity: .78; } }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  @keyframes temblar { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+  @media (max-width: 900px) {
+    .escena { justify-items: center; padding: 8vh 16px 22vh; }
+    .escena .persona, .escena .burbuja { display: none; }
+    .tarjeta { padding: 40px 26px 32px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .escena *, .escena *::after { animation: none !important; transition: none !important; }
+  }
