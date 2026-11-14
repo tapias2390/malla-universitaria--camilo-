@@ -1,21 +1,106 @@
-/* Mallas curriculares:
- *  1. Comparar: la malla anterior y la vigente, una encima de la otra, con colores que
+/* Mallas curriculares, en tres pestañas:
+ *  1. PDF oficial: el documento de la malla tal como lo publica el programa (visor + descarga).
+ *  2. Comparar: la malla anterior y la vigente, una encima de la otra, con colores que
  *     muestran qué se mantiene, qué cambia, qué se fusiona, qué se elimina y qué es nuevo.
  *     Al pasar el cursor por una materia se resalta su pareja en la otra malla.
- *  2. Ver una malla: detalle de una versión por semestre. */
+ *  3. Ver una malla: detalle de una versión por semestre.
+ * Los PDF están en web/documentos/ y se listan en documentos/mallas.json. */
 import { api } from "../api.js";
 import { $, $$, ETIQUETAS, cargando, chip, errorCarga, esc } from "../ui.js";
 
 const esCupo = (m) => m.tipo === "electiva" || m.tipo === "optativa";
 
 export async function vistaMalla(raiz) {
-  raiz.innerHTML = cargando();
+  raiz.innerHTML = `
+    <div class="encabezado"><div><h1>Mallas curriculares</h1><p>Plan de estudios de Ingeniería Química.</p></div></div>
+    <div class="pestanas" role="tablist">
+      <button class="activa" data-modo="pdf" role="tab">PDF oficial</button>
+      <button data-modo="comparar" role="tab">Comparar malla anterior y vigente</button>
+      <button data-modo="una" role="tab">Ver una malla</button>
+    </div>
+    <section id="modoPdf">${cargando()}</section>
+    <section id="modoComparar" class="oculto">${cargando()}</section>
+    <section id="modoUna" class="oculto">${cargando()}</section>`;
+
+  $$(".pestanas button", raiz).forEach((b) => b.onclick = () => {
+    $$(".pestanas button", raiz).forEach((x) => x.classList.toggle("activa", x === b));
+    $("#modoPdf").classList.toggle("oculto", b.dataset.modo !== "pdf");
+    $("#modoComparar").classList.toggle("oculto", b.dataset.modo !== "comparar");
+    $("#modoUna").classList.toggle("oculto", b.dataset.modo !== "una");
+  });
+
+  // Cada pestaña carga por su cuenta: si falla una, las demás siguen funcionando.
+  await Promise.all([pestanaPdf($("#modoPdf")), pestanasDatos()]);
+}
+
+// ===================================================================== PDF oficial
+async function pestanaPdf(caja) {
+  let documentos;
+  try {
+    const respuesta = await fetch("documentos/mallas.json", { cache: "no-cache" });
+    if (!respuesta.ok) throw new Error();
+    documentos = await respuesta.json();
+  } catch {
+    caja.innerHTML = errorCarga("No se encontraron los PDF de las mallas (carpeta web/documentos).");
+    return;
+  }
+
+  const iconoPdf = `<svg class="icono-pdf" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="4" fill="#e5322d"/>
+    <text x="12" y="15.2" text-anchor="middle" font-size="7.2" font-weight="700" font-family="Arial, sans-serif" fill="#fff">PDF</text></svg>`;
+
+  caja.innerHTML = `
+    <div class="documentos">
+      <div class="panel lista-archivos" role="listbox" aria-label="Documentos de las mallas">
+        <h2>Documentos</h2>
+        ${documentos.map((d, i) => `
+          <button class="archivo" data-i="${i}" type="button" role="option">
+            ${iconoPdf}<span><b>${esc(d.nombre)}</b><small>${esc(d.titulo)}</small></span>
+          </button>`).join("")}
+      </div>
+      <div class="panel visor-pdf">
+        <div class="encabezado" style="margin-bottom:12px">
+          <div><h2 id="tituloPdf"></h2><p id="descripcionPdf"></p></div>
+          <div class="fila">
+            <a class="boton sec" id="abrirPdf" target="_blank" rel="noopener">Abrir en pestaña nueva</a>
+            <a class="boton" id="descargarPdf" download>Descargar</a>
+          </div>
+        </div>
+        <iframe id="marcoPdf" title="Malla curricular en PDF"></iframe>
+        <p class="ayuda-pdf">¿No se ve el documento? Use “Abrir en pestaña nueva” o “Descargar”.</p>
+      </div>
+    </div>`;
+
+  const mostrar = (i) => {
+    const d = documentos[i];
+    $$(".lista-archivos .archivo").forEach((b) => {
+      const activo = Number(b.dataset.i) === i;
+      b.classList.toggle("activo", activo);
+      b.setAttribute("aria-selected", String(activo));
+    });
+    $("#tituloPdf").textContent = `${d.nombre} · ${d.titulo}`;
+    $("#descripcionPdf").textContent = d.descripcion;
+    $("#abrirPdf").href = d.archivo;
+    $("#descargarPdf").href = d.archivo;
+    $("#descargarPdf").setAttribute("download", d.nombre);
+    $("#marcoPdf").src = `${d.archivo}#navpanes=0&view=FitH`;
+  };
+  $$(".lista-archivos .archivo").forEach((b) => b.onclick = () => mostrar(Number(b.dataset.i)));
+  mostrar(0);
+}
+
+// ===================================================================== datos del sistema
+async function pestanasDatos() {
   let versiones, vigente, equivalencias;
   try {
     [versiones, vigente, equivalencias] = await Promise.all([
       api("/api/mallas"), api("/api/mallas/vigente"), api("/api/equivalencias"),
     ]);
-  } catch (error) { raiz.innerHTML = errorCarga(error.message); return; }
+  } catch (error) {
+    const mensaje = `${error.message} Si acaba de actualizar la aplicación, reinicie el servidor.`;
+    $("#modoComparar").innerHTML = errorCarga(mensaje);
+    $("#modoUna").innerHTML = errorCarga(mensaje);
+    return;
+  }
 
   const cache = new Map([[vigente.version, vigente]]);
   const obtener = async (v) => {
@@ -26,31 +111,17 @@ export async function vistaMalla(raiz) {
     `<option value="${esc(v)}" ${v === seleccion ? "selected" : ""}>Malla ${esc(v)}${v === vigente.version ? " (vigente)" : ""}</option>`).join("");
   const anterior = versiones.filter((v) => v !== vigente.version).at(-1) || vigente.version;
 
-  raiz.innerHTML = `
-    <div class="encabezado"><div><h1>Mallas curriculares</h1><p>Plan de estudios de Ingeniería Química.</p></div></div>
-    <div class="pestanas" role="tablist">
-      <button class="activa" data-modo="comparar" role="tab">Comparar malla anterior y vigente</button>
-      <button data-modo="una" role="tab">Ver una malla</button>
+  $("#modoComparar").innerHTML = `
+    <div class="fila" style="margin-bottom:16px">
+      <div><label for="verOrigen">Malla anterior</label><select id="verOrigen">${opciones(anterior)}</select></div>
+      <span style="padding-top:22px;color:var(--suave)">→</span>
+      <div><label for="verDestino">Malla nueva</label><select id="verDestino">${opciones(vigente.version)}</select></div>
     </div>
-    <section id="modoComparar">
-      <div class="fila" style="margin-bottom:16px">
-        <div><label for="verOrigen">Malla anterior</label><select id="verOrigen">${opciones(anterior)}</select></div>
-        <span style="padding-top:22px;color:var(--suave)">→</span>
-        <div><label for="verDestino">Malla nueva</label><select id="verDestino">${opciones(vigente.version)}</select></div>
-      </div>
-      <div id="comparacion"></div>
-    </section>
-    <section id="modoUna" class="oculto">
-      <div style="margin-bottom:16px"><label for="version">Versión</label>
-        <select id="version" style="max-width:260px">${opciones(vigente.version)}</select></div>
-      <div id="detalleMalla"></div>
-    </section>`;
-
-  $$(".pestanas button", raiz).forEach((b) => b.onclick = () => {
-    $$(".pestanas button", raiz).forEach((x) => x.classList.toggle("activa", x === b));
-    $("#modoComparar").classList.toggle("oculto", b.dataset.modo !== "comparar");
-    $("#modoUna").classList.toggle("oculto", b.dataset.modo !== "una");
-  });
+    <div id="comparacion"></div>`;
+  $("#modoUna").innerHTML = `
+    <div style="margin-bottom:16px"><label for="version">Versión</label>
+      <select id="version" style="max-width:260px">${opciones(vigente.version)}</select></div>
+    <div id="detalleMalla"></div>`;
 
   const comparar = async () => {
     const caja = $("#comparacion");

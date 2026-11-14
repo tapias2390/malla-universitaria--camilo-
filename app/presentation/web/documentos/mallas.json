@@ -1,0 +1,16 @@
+[
+  {
+    "version": "2026",
+    "nombre": "Malla_13_05_2026.pdf",
+    "titulo": "Malla 2026 (vigente)",
+    "descripcion": "Propuesta curricular del 13 de mayo de 2026. En la página 2 está el catálogo de optativas.",
+    "archivo": "documentos/malla_2026.pdf"
+  },
+  {
+    "version": "2016",
+    "nombre": "Malla Curricular IQ.pdf",
+    "titulo": "Malla 2016 (anterior)",
+    "descripcion": "Plan de estudios del Acuerdo 252 de 2016 del Consejo de Facultad de Ingeniería y Arquitectura.",
+    "archivo": "documentos/malla_2016.pdf"
+  }
+]
