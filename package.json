@@ -1,0 +1,12 @@
+{
+  "name": "transicion-mallas",
+  "private": true,
+  "description": "Atajos para correr el proyecto (Python/FastAPI) con npm. Por dentro usan el Python de .venv.",
+  "scripts": {
+    "dev": ".venv\\Scripts\\python.exe run.py",
+    "test": ".venv\\Scripts\\python.exe -m pytest",
+    "datos": ".venv\\Scripts\\python.exe scripts\\crear_datos_ejemplo.py --forzar",
+    "drive": ".venv\\Scripts\\python.exe scripts\\probar_drive.py",
+    "instalar": "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+  }
+}

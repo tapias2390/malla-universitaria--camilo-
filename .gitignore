@@ -11,3 +11,6 @@ credenciales/
 # Datos generados localmente
 data/*.xlsx
 data/tickets.json
+data/auditoria.jsonl
+data/respaldo_*/
+data/*.tmp
