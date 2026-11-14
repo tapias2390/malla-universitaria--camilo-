@@ -187,7 +187,7 @@ No requiere instalar Python. Hay dos formas de usarlo:
 
 | Archivo | Uso |
 |---|---|
-| `dist\TransicionMallas-2.0.0.msi` | **Instalador**: doble clic. Se instala para el usuario actual, sin permisos de administrador, y crea accesos directos en el menú Inicio y en el escritorio. |
+| `dist\TransicionMallas-2.0.1.msi` | **Instalador**: doble clic. Se instala para el usuario actual, sin permisos de administrador, y crea accesos directos en el menú Inicio y en el escritorio. |
 | `dist\TransicionMallas\TransicionMallas.exe` | **Portable**: se copia la carpeta completa y se ejecuta el `.exe`. |
 
 Cómo funciona el ejecutable:
@@ -200,7 +200,7 @@ Cómo funciona el ejecutable:
 Para volver a construir el instalador (requisitos en el encabezado del script):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File empaquetado\construir.ps1 -Version 2.0.1
+powershell -ExecutionPolicy Bypass -File empaquetado\construir.ps1 -Version 2.0.2
 ```
 
 ## Seguridad y auditoría

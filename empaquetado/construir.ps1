@@ -10,7 +10,7 @@
 # Resultado:
 #   dist\TransicionMallas\TransicionMallas.exe   (versión portable: se puede copiar la carpeta)
 #   dist\TransicionMallas-<versión>.msi           (instalador)
-param([string]$Version = "2.0.0")
+param([string]$Version = "2.0.1")
 $ErrorActionPreference = "Stop"
 $raiz = Split-Path -Parent $PSScriptRoot
 Set-Location $raiz

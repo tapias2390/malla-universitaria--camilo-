@@ -26,9 +26,12 @@
     <Property Id="ARPPRODUCTICON" Value="icono.ico" />
     <Property Id="ARPCOMMENTS" Value="Abre la aplicación en el navegador: http://127.0.0.1:8000" />
 
-    <StandardDirectory Id="ProgramFiles6432Folder">
-      <Directory Id="INSTALLFOLDER" Name="TransicionMallas">
-        <Files Include="$(Origen)\**" />
+    <!-- Carpeta del usuario: no requiere administrador (Program Files sí lo requiere). -->
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="CarpetaProgramas" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="TransicionMallas">
+          <Files Include="$(Origen)\**" />
+        </Directory>
       </Directory>
     </StandardDirectory>
 
