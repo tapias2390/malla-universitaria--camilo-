@@ -36,5 +36,17 @@ class TicketNoEncontrado(ErrorDominio):
     pass
 
 
+class UsuarioNoEncontrado(ErrorDominio):
+    pass
+
+
+class DatosInvalidos(ErrorDominio):
+    """Los datos enviados no cumplen una regla (p. ej. malla inexistente, créditos negativos)."""
+
+
+class RegistroDuplicado(ErrorDominio):
+    """Ya existe un registro con esa clave (código de estudiante, usuario...)."""
+
+
 class ErrorFuenteDatos(ErrorDominio):
     """No se pudo leer el origen de datos (Drive caído, hoja faltante, columnas mal nombradas...)."""
