@@ -181,6 +181,28 @@ Cómo funciona la conexión:
 - **Lectura:** usa permiso de solo lectura. Los archivos se guardan en caché `CACHE_SEGUNDOS` segundos. Si Drive falla, se usa la última copia descargada.
 - **Escritura:** pide permiso de escritura solo al guardar. Antes de modificar, descarga la versión más reciente.
 
+## Ejecutable e instalador para Windows 11
+
+No requiere instalar Python. Hay dos formas de usarlo:
+
+| Archivo | Uso |
+|---|---|
+| `dist\TransicionMallas-2.0.0.msi` | **Instalador**: doble clic. Se instala para el usuario actual, sin permisos de administrador, y crea accesos directos en el menú Inicio y en el escritorio. |
+| `dist\TransicionMallas\TransicionMallas.exe` | **Portable**: se copia la carpeta completa y se ejecuta el `.exe`. |
+
+Cómo funciona el ejecutable:
+
+- **Al abrirlo:** aparece una ventana con el estado y se abre el navegador en http://127.0.0.1:8000. Cerrar esa ventana detiene la aplicación.
+- **Carpeta de datos:** `%LOCALAPPDATA%\TransicionMallas`. La primera vez se crean ahí el `.env` (con una clave aleatoria) y los Excel de prueba (`admin` / `Admin2025*`). Los datos se conservan al actualizar o desinstalar.
+- **Usar Drive o los Excel reales:** edite el `.env` de esa carpeta y copie ahí la carpeta `credenciales\`.
+- **Si el puerto 8000 está ocupado:** defina la variable de entorno `TRANSICION_PUERTO`.
+
+Para volver a construir el instalador (requisitos en el encabezado del script):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File empaquetado\construir.ps1 -Version 2.0.1
+```
+
 ## Seguridad y auditoría
 
 - Tokens JWT firmados con HS256 y con vencimiento. El algoritmo está fijo en el código, así que no se acepta `alg: none`.

@@ -14,3 +14,7 @@ data/tickets.json
 data/auditoria.jsonl
 data/respaldo_*/
 data/*.tmp
+
+# Empaquetado (se generan con empaquetado/construir.ps1)
+build/
+dist/

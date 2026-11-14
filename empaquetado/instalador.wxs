@@ -1,0 +1,51 @@
+<!--
+  Instalador .msi de "Transición de Mallas" (WiX Toolset v5).
+
+  - Se instala para el usuario actual (sin permisos de administrador) en
+    %LOCALAPPDATA%\Programs\TransicionMallas.
+  - Crea accesos directos en el menú Inicio y en el escritorio.
+  - Los datos (.env, Excel, tickets, auditoría) NO van aquí: el programa los crea en
+    %LOCALAPPDATA%\TransicionMallas y se conservan al actualizar o desinstalar.
+
+  Lo construye empaquetado\construir.ps1. No cambie el UpgradeCode: permite que una versión
+  nueva reemplace a la anterior.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Transición de Mallas"
+           Manufacturer="Programa de Ingeniería Química"
+           Version="$(Version)"
+           UpgradeCode="eb65ffa4-ae26-424a-be80-9f688348aacd"
+           Scope="perUser"
+           Codepage="1252"
+           Language="3082">
+    <SummaryInformation Description="Transición de estudiantes a la malla vigente de Ingeniería Química" />
+    <MajorUpgrade DowngradeErrorMessage="Ya está instalada una versión más nueva de Transición de Mallas." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="icono.ico" SourceFile="icono.ico" />
+    <Property Id="ARPPRODUCTICON" Value="icono.ico" />
+    <Property Id="ARPCOMMENTS" Value="Abre la aplicación en el navegador: http://127.0.0.1:8000" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="TransicionMallas">
+        <Files Include="$(Origen)\**" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="AccesoMenuInicio" Guid="7b1d2c8e-3f4a-4e0b-9a51-2d6c8e1f0a11">
+        <Shortcut Id="AccesoMenu" Name="Transición de Mallas" Description="Transición de mallas curriculares"
+                  Target="[INSTALLFOLDER]TransicionMallas.exe" WorkingDirectory="INSTALLFOLDER" Icon="icono.ico" />
+        <RegistryValue Root="HKCU" Key="Software\TransicionMallas" Name="menu" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="AccesoEscritorio" Guid="c4e9a7d2-6b1f-4c3e-8d20-5a7f9b3e2c44">
+        <Shortcut Id="AccesoEscritorioLnk" Name="Transición de Mallas" Description="Transición de mallas curriculares"
+                  Target="[INSTALLFOLDER]TransicionMallas.exe" WorkingDirectory="INSTALLFOLDER" Icon="icono.ico" />
+        <RegistryValue Root="HKCU" Key="Software\TransicionMallas" Name="escritorio" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+  </Package>
+</Wix>
