@@ -110,7 +110,9 @@ def resaltar_pendientes(hoja, columna_obs: str) -> None:
 # ---------------------------------------------------------------------------
 # Libros
 # ---------------------------------------------------------------------------
-def crear_usuarios(ruta: Path) -> None:
+def crear_usuarios(ruta: Path, claves: dict[str, str] | None = None) -> None:
+    """`claves` reemplaza la contraseña de prueba de cada usuario (la usa el ejecutable instalado)."""
+    claves = claves or {}
     hasher = BcryptHasher(rondas=10)
     libro = Workbook()
     libro.remove(libro.active)
@@ -136,7 +138,7 @@ def crear_usuarios(ruta: Path) -> None:
     hoja_datos(
         libro, "usuarios",
         ["username", "password_hash", "nombre", "rol", "activo", "codigo_estudiante"],
-        [(u, hasher.hashear(c), n, r, "si" if a else "no", e) for u, c, n, r, a, e in datos.USUARIOS],
+        [(u, hasher.hashear(claves.get(u, c)), n, r, "si" if a else "no", e) for u, c, n, r, a, e in datos.USUARIOS],
         listas={"rol": "admin,consultor,estudiante", "activo": "si,no"},
     )
     libro.save(ruta)
@@ -238,10 +240,13 @@ def crear_academico(ruta: Path) -> None:
     libro.save(ruta)
 
 
-def generar(destino: Path) -> None:
-    """Crea los dos Excel en `destino` (lo usan también las pruebas automáticas)."""
+def generar(destino: Path, claves: dict[str, str] | None = None) -> None:
+    """Crea los dos Excel en `destino` (lo usan también las pruebas automáticas).
+
+    Sin `claves` se usan las contraseñas de prueba documentadas (solo para desarrollo).
+    """
     destino.mkdir(parents=True, exist_ok=True)
-    crear_usuarios(destino / "usuarios.xlsx")
+    crear_usuarios(destino / "usuarios.xlsx", claves)
     crear_academico(destino / "academico.xlsx")
 
 

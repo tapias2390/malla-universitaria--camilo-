@@ -2,7 +2,8 @@
 
 1. Usa una carpeta de datos con permiso de escritura: %LOCALAPPDATA%\\TransicionMallas
    (la carpeta de instalación en "Archivos de programa" es de solo lectura).
-2. La primera vez crea ahí el .env (con una clave JWT aleatoria) y los Excel de prueba.
+2. La primera vez crea ahí el .env (con una clave JWT aleatoria) y los Excel de prueba,
+   con contraseñas ALEATORIAS para cada usuario (se muestran y quedan en CLAVES_INICIALES.txt).
 3. Arranca el servidor en http://127.0.0.1:8000 y abre el navegador.
    Si ya estaba abierto, solo abre el navegador.
 
@@ -58,10 +59,34 @@ def preparar(base: Path) -> None:
         )
         print("  Se creó la configuración (.env).")
     if not (base / "data" / "academico.xlsx").exists():
+        from scripts import datos_ingenieria_quimica as datos
         from scripts.crear_datos_ejemplo import generar
 
-        generar(base / "data")
-        print("  Se crearon los Excel de prueba (usuario admin / Admin2025*).")
+        # Claves aleatorias y únicas por instalación: las de prueba son públicas (están en el repositorio).
+        claves = {u[0]: clave_aleatoria() for u in datos.USUARIOS}
+        generar(base / "data", claves)
+        archivo = base / "CLAVES_INICIALES.txt"
+        lineas = [f"{usuario:<12} {clave}" for usuario, clave in claves.items() if usuario != "inactivo"]
+        archivo.write_text(
+            "Claves iniciales de Transición de Mallas (generadas al instalar).\n"
+            "Cámbielas en Usuarios -> Editar y luego borre este archivo.\n\n" + "\n".join(lineas) + "\n",
+            encoding="utf-8",
+        )
+        print("  Se crearon los Excel de prueba con claves NUEVAS para esta instalación:\n")
+        for linea in lineas:
+            print(f"     {linea}")
+        print(f"\n  Quedaron guardadas en: {archivo}")
+
+
+def clave_aleatoria() -> str:
+    """12 caracteres con letras y números (cumple la política de contraseñas)."""
+    import string
+
+    alfabeto = string.ascii_letters + string.digits
+    while True:
+        clave = "".join(secrets.choice(alfabeto) for _ in range(12))
+        if any(c.isdigit() for c in clave) and any(c.isalpha() for c in clave):
+            return clave
 
 
 def puerto_en_uso() -> bool:

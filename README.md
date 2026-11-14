@@ -35,6 +35,10 @@ En Git Bash, activa el entorno con `source .venv/Scripts/activate`.
 | Consultor | `consultor` | `Consulta2025*` | Buscar estudiantes y validar su transición |
 | Estudiante | `20242001`, `20221001`, `20261001` | `Estudiante2026*` | Ver solo su propio avance |
 
+> ⚠️ Estas contraseñas son **solo de prueba** y son públicas: sirven para el desarrollo local con
+> `scripts/crear_datos_ejemplo.py`. El **ejecutable instalado** genera claves aleatorias propias
+> (ver más abajo). Antes de cargar datos reales, cambie todas las contraseñas desde **Usuarios**.
+
 Los tres estudiantes de prueba son casos reales **anonimizados**:
 
 | Código | Caso |
@@ -193,7 +197,7 @@ No requiere instalar Python. Hay dos formas de usarlo:
 Cómo funciona el ejecutable:
 
 - **Al abrirlo:** aparece una ventana con el estado y se abre el navegador en http://127.0.0.1:8000. Cerrar esa ventana detiene la aplicación.
-- **Carpeta de datos:** `%LOCALAPPDATA%\TransicionMallas`. La primera vez se crean ahí el `.env` (con una clave aleatoria) y los Excel de prueba (`admin` / `Admin2025*`). Los datos se conservan al actualizar o desinstalar.
+- **Carpeta de datos:** `%LOCALAPPDATA%\TransicionMallas`. La primera vez se crean ahí el `.env` (con una clave aleatoria) y los Excel de prueba, con **contraseñas aleatorias únicas para esa instalación**. Se muestran en la ventana y quedan en `CLAVES_INICIALES.txt`; cámbielas y borre ese archivo. Los datos se conservan al actualizar o desinstalar.
 - **Usar Drive o los Excel reales:** edite el `.env` de esa carpeta y copie ahí la carpeta `credenciales\`.
 - **Si el puerto 8000 está ocupado:** defina la variable de entorno `TRANSICION_PUERTO`.
 
